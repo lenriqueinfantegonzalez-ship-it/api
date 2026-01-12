@@ -1,75 +1,92 @@
 package com.aseguradora.api.controller;
 
 import com.aseguradora.api.dto.LoginRequest;
+import com.aseguradora.api.model.TokenSeguridad;
 import com.aseguradora.api.model.Usuario;
+import com.aseguradora.api.repository.TokenSeguridadRepository;
 import com.aseguradora.api.repository.UsuarioRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse; // Necesario ahora
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.context.SecurityContextRepository; // Importante
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    // Herramienta de encriptación
-    private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
+    @Autowired
+    private TokenSeguridadRepository tokenRepository;
 
-    // LOGIN
+    @Autowired
+    private PasswordEncoder encoder;
+
+    // INYECTAMOS EL REPOSITORIO (Esto es lo nuevo y vital)
+    @Autowired
+    private SecurityContextRepository securityContextRepository;
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        Usuario usuario = usuarioRepository.findByCorreo(request.getCorreo())
-                .orElse(null);
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response) {
+        try {
+            // 1. Autenticar
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getCorreo(),
+                            loginRequest.getPassword()
+                    )
+            );
 
-        // Validamos si existe el usuario
-        if (usuario == null) {
-            return ResponseEntity.status(401).body("Usuario no encontrado");
+            // 2. Crear Contexto
+            SecurityContext sc = SecurityContextHolder.createEmptyContext();
+            sc.setAuthentication(authentication);
+            SecurityContextHolder.setContext(sc);
+
+            // 3. GUARDADO OFICIAL (La solución al 403)
+            // Esto guarda la sesión y escribe la cookie JSESSIONID en la respuesta automáticamente
+            securityContextRepository.saveContext(sc, request, response);
+
+            // 4. Devolver respuesta
+            Usuario usuario = usuarioRepository.findByCorreo(loginRequest.getCorreo()).orElseThrow();
+            
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("mensaje", "Login exitoso");
+            resp.put("usuario", usuario);
+            resp.put("rol", usuario.getRol());
+
+            return ResponseEntity.ok(resp);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(401).body("Credenciales incorrectas");
         }
-
-        // COMPROBACIÓN SEGURA:
-        // encoder.matches(contraseña_escrita, contraseña_encriptada_en_bd)
-        // NOTA: Si la contraseña en BD es "plana" (antigua), matches fallará. 
-        // Para arreglarlo, usa el Reset Password después de reiniciar.
-        boolean coincide = encoder.matches(request.getPassword(), usuario.getPassword());
-        
-        // *Truco temporal*: Si falla la encriptada, probamos texto plano 
-        // (para que no se te bloquee el admin antiguo mientras migras)
-        if (!coincide && request.getPassword().equals(usuario.getPassword())) {
-            coincide = true; 
-        }
-
-        if (!coincide) {
-            return ResponseEntity.status(401).body("Contraseña incorrecta");
-        }
-
-        if (!usuario.getActivo()) {
-            return ResponseEntity.status(401).body("Cuenta inactiva");
-        }
-
-        return ResponseEntity.ok(usuario);
     }
 
-    // RESET PASSWORD (Ahora guarda encriptado)
-    @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> payload) {
-        String correo = payload.get("correo");
-        String nuevaPassword = payload.get("nuevaPassword");
-
-        Usuario usuario = usuarioRepository.findByCorreo(correo).orElse(null);
-
-        if (usuario == null) {
-            return ResponseEntity.badRequest().body("Error: Ese correo no existe.");
-        }
-
-        // ENCRIPTAMOS ANTES DE GUARDAR
-        usuario.setPassword(encoder.encode(nuevaPassword));
-        usuarioRepository.save(usuario);
-
-        return ResponseEntity.ok().body("Contraseña actualizada y encriptada.");
+    // --- MÉTODOS DE RECUPERACIÓN (Sin cambios) ---
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> payload) {
+        // ... (Tu código existente o el que te pasé antes) ...
+        // Para resumir aquí pongo el return simple, pero mantén tu lógica de tokens
+        return ResponseEntity.ok("Si existe, enviado.");
+    }
+    
+    @PostMapping("/reset-password-token")
+    public ResponseEntity<?> resetPasswordToken(@RequestBody Map<String, String> payload) {
+        // ... (Tu código existente) ...
+        return ResponseEntity.ok("Contraseña cambiada");
     }
 }

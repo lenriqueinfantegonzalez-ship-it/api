@@ -1,5 +1,6 @@
 package com.aseguradora.api.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties; // <--- AÑADIR IMPORT
 import jakarta.persistence.*;
 import lombok.Data;
 import java.math.BigDecimal;
@@ -33,13 +34,15 @@ public class Seguro {
     @Column(length = 20)
     private String estado;
 
-    // Relaciones (Foreign Keys)
-    
-    @ManyToOne // Muchos seguros pueden ser de un usuario
+    // --- RELACIONES CORREGIDAS ---
+
+    @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
+    // ESTA LÍNEA ES VITAL: Evita que al pedir seguros se rompa intentando leer el usuario entero
+    @JsonIgnoreProperties({"password", "roles", "hibernateLazyInitializer", "handler"}) 
     private Usuario usuario;
 
-    @ManyToOne // Muchos seguros pueden ser de un tipo (ej. Coche)
+    @ManyToOne
     @JoinColumn(name = "id_tipo", nullable = false)
     private TipoSeguro tipoSeguro;
 }
