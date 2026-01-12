@@ -1,18 +1,22 @@
 version: '3.8'
 
 services:
-  # Servicio de Base de Datos MySQL
-  mysqldb:
+  db:
     image: mysql:8.0
-    container_name: aseguradora_db
+    container_name: mysql_container
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: aseguradora_db
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
-      - ./docker-data:/var/lib/mysql  # Persistencia de datos
-      - ./init-scripts:/docker-entrypoint-initdb.d # Script inicial
+      # ESTA es la línea mágica que te falta o está mal:
+      # Conecta tu carpeta local con la carpeta de inicio de la base de datos
+      - ./init-scripts:/docker-entrypoint-initdb.d
+      
+      # Este es el volumen para guardar los datos (persistencia)
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  mysql_data:

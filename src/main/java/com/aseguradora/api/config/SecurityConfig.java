@@ -30,16 +30,19 @@ public class SecurityConfig {
     }
 
     // Configuración para permitir que el Frontend (puerto 5500) hable con el Backend
-    @Bean
-    public UrlBasedCorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://127.0.0.1:5500", "http://localhost:5500")); // Tu Frontend
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
+  @Bean
+public UrlBasedCorsConfigurationSource corsConfigurationSource() {
+    CorsConfiguration config = new CorsConfiguration();
+    
+    // CAMBIA ESTO: Permitir cualquier origen (*)
+    config.setAllowedOriginPatterns(List.of("*")); 
+    
+    config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+    config.setAllowedHeaders(List.of("*"));
+    config.setAllowCredentials(true);
+    
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/**", config);
+    return source;
+}
 }
