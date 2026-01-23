@@ -15,27 +15,27 @@ public class FacturaController {
     @Autowired
     private FacturaRepository facturaRepository;
 
+    // 1. LISTAR TODAS (Para el ADMIN)
     @GetMapping
     public List<Factura> listarTodas() {
         return facturaRepository.findAll();
     }
 
-    // Ver facturas de un usuario
+    // 2. LISTAR POR USUARIO (Para el Cliente)
     @GetMapping("/usuario/{idUsuario}")
     public List<Factura> listarPorUsuario(@PathVariable Long idUsuario) {
         return facturaRepository.findByUsuario_IdUsuario(idUsuario);
     }
 
+    // 3. CREAR FACTURA
     @PostMapping
     public Factura crearFactura(@RequestBody Factura factura) {
         return facturaRepository.save(factura);
     }
 
-    // ... otros métodos ...
-
-    // BORRAR FACTURA
+    // 4. BORRAR FACTURA
     @DeleteMapping("/{id}")
     public void borrarFactura(@PathVariable Long id) {
         facturaRepository.deleteById(id);
     }
-}   
+}

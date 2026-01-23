@@ -35,4 +35,21 @@ public class Usuario {
 
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;
+   // ... otros campos ...
+
+    // --- CAMPOS NUEVOS PARA GOOGLE AUTHENTICATOR ---
+    
+    @Column(name = "two_factor_secret")
+    private String twoFactorSecret; // Aquí guardamos la clave Base32
+    
+    // Requisito: Límite de intentos
+    @Column(name = "intentos_2fa")
+    private Integer intentos2fa = 0; 
+    
+    // NOTA: Borra twoFactorCode y twoFactorExpiry, ya no sirven.
+
+    // Opcional: Para saber si este usuario tiene obligado el 2FA o no.
+    // Lo pondremos a 'true' por defecto o según prefieras.
+    @Column(name = "two_factor_enabled") 
+    private Boolean twoFactorEnabled = true; 
 }
