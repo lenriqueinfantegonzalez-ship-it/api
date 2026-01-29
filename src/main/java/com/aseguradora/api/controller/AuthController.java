@@ -69,8 +69,7 @@ public class AuthController {
         }
     }
 
-    // --- LOGIN ---
-    @PostMapping("/login")
+   @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credenciales) {
         String correo = credenciales.get("correo");
         String password = credenciales.get("password");
@@ -80,29 +79,34 @@ public class AuthController {
         if (usuarioOpt.isPresent()) {
             Usuario usuario = usuarioOpt.get();
             
-            // 1. Verificamos contraseña
+            // 1. Verificar contraseña
             if (passwordEncoder.matches(password, usuario.getPassword())) {
                 
-                // 2. Verificamos si está ACTIVO
+                // 2. Verificar si está ACTIVO
                 if (!usuario.getActivo()) {
-                    logger.warn("Login rechazado: Usuario inactivo ({})", correo);
-                    return ResponseEntity.status(403).body("Tu cuenta está desactivada. Contacta con el admin.");
+                    return ResponseEntity.status(403).body("Tu cuenta está desactivada.");
                 }
 
-                // 3. Generamos Token JWT
+                // 3. BLOQUEO 2FA (Aquí está la clave)
+                // Si el usuario tiene el 2FA activado, NO le damos el token todavía.
+                if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
+                    Map<String, String> response = new HashMap<>();
+                    response.put("status", "2FA_REQUIRED"); // Esta es la señal que espera tu HTML
+                    response.put("correo", correo);
+                    return ResponseEntity.ok(response);
+                }
+
+                // 4. Si NO tiene 2FA, generamos el Token y entra normal
                 String token = jwtUtil.generateToken(usuario.getCorreo(), usuario.getRol(), usuario.getIdUsuario());
                 
-                // Preparamos respuesta
                 Map<String, Object> respuesta = new HashMap<>();
                 respuesta.put("token", token);
                 respuesta.put("usuario", usuario);
                 
-                logger.info("Login exitoso para: {}", correo);
                 return ResponseEntity.ok(respuesta);
             }
         }
         
-        logger.warn("Login fallido: Credenciales incorrectas para {}", correo);
         return ResponseEntity.status(401).body("Credenciales incorrectas");
     }
 
@@ -153,6 +157,35 @@ public class AuthController {
         } else {
             logger.warn("Fallo al confirmar 2FA para {}: Código incorrecto", correo);
             return ResponseEntity.status(400).body("Código incorrecto");
+        }
+    }
+    @PostMapping("/verify-2fa")
+    public ResponseEntity<?> verify2faLogin(@RequestBody Map<String, String> body) {
+        String correo = body.get("correo");
+        String codigoStr = body.get("codigo");
+        
+        try {
+            int codigo = Integer.parseInt(codigoStr);
+            Usuario usuario = usuarioRepository.findByCorreo(correo)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            // Validamos con Google Authenticator
+            boolean isCodeValid = gAuth.authorize(usuario.getTwoFactorSecret(), codigo);
+
+            if (isCodeValid) {
+                // Código correcto -> AHORA SÍ generamos el token
+                String token = jwtUtil.generateToken(usuario.getCorreo(), usuario.getRol(), usuario.getIdUsuario());
+                
+                Map<String, Object> respuesta = new HashMap<>();
+                respuesta.put("token", token);
+                respuesta.put("usuario", usuario);
+                
+                return ResponseEntity.ok(respuesta);
+            } else {
+                return ResponseEntity.status(401).body("Código incorrecto");
+            }
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error verificando código");
         }
     }
     

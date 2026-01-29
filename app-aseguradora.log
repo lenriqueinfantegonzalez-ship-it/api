@@ -553,3 +553,264 @@ java.sql.SQLIntegrityConstraintViolationException: Cannot delete or update a par
 2026-01-29 08:48:48 [http-nio-8081-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
 2026-01-29 08:48:48 [http-nio-8081-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
 2026-01-29 08:50:51 [http-nio-8081-exec-10] INFO  c.a.api.controller.AuthController - Login exitoso para: admin@aseguradora.com
+2026-01-29 09:39:57 [http-nio-8081-exec-10] WARN  org.hibernate.orm.jdbc.error - HHH000247: ErrorCode: 1451, SQLState: 23000
+2026-01-29 09:39:57 [http-nio-8081-exec-10] WARN  org.hibernate.orm.jdbc.error - Cannot delete or update a parent row: a foreign key constraint fails (`aseguradora_db`.`facturas`, CONSTRAINT `facturas_ibfk_1` FOREIGN KEY (`id_seguro`) REFERENCES `seguros` (`id_seguro`))
+2026-01-29 09:39:57 [http-nio-8081-exec-10] ERROR o.a.c.c.C.[.[.[.[dispatcherServlet] - Servlet.service() for servlet [dispatcherServlet] in context with path [] threw exception [Request processing failed: org.springframework.dao.DataIntegrityViolationException: could not execute statement [Cannot delete or update a parent row: a foreign key constraint fails (`aseguradora_db`.`facturas`, CONSTRAINT `facturas_ibfk_1` FOREIGN KEY (`id_seguro`) REFERENCES `seguros` (`id_seguro`))] [delete from seguros where id_seguro=?]; SQL [delete from seguros where id_seguro=?]; constraint [facturas_ibfk_1]] with root cause
+java.sql.SQLIntegrityConstraintViolationException: Cannot delete or update a parent row: a foreign key constraint fails (`aseguradora_db`.`facturas`, CONSTRAINT `facturas_ibfk_1` FOREIGN KEY (`id_seguro`) REFERENCES `seguros` (`id_seguro`))
+	at com.mysql.cj.jdbc.exceptions.SQLError.createSQLException(SQLError.java:109)
+	at com.mysql.cj.jdbc.exceptions.SQLExceptionsMapping.translateException(SQLExceptionsMapping.java:114)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeInternal(ClientPreparedStatement.java:988)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1166)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdateInternal(ClientPreparedStatement.java:1101)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeLargeUpdate(ClientPreparedStatement.java:1448)
+	at com.mysql.cj.jdbc.ClientPreparedStatement.executeUpdate(ClientPreparedStatement.java:1084)
+	at com.zaxxer.hikari.pool.ProxyPreparedStatement.executeUpdate(ProxyPreparedStatement.java:61)
+	at com.zaxxer.hikari.pool.HikariProxyPreparedStatement.executeUpdate(HikariProxyPreparedStatement.java)
+	at org.hibernate.engine.jdbc.internal.ResultSetReturnImpl.executeUpdate(ResultSetReturnImpl.java:190)
+	at org.hibernate.engine.jdbc.mutation.internal.AbstractMutationExecutor.performNonBatchedMutation(AbstractMutationExecutor.java:148)
+	at org.hibernate.engine.jdbc.mutation.internal.MutationExecutorSingleNonBatched.performNonBatchedOperations(MutationExecutorSingleNonBatched.java:53)
+	at org.hibernate.engine.jdbc.mutation.internal.AbstractMutationExecutor.execute(AbstractMutationExecutor.java:66)
+	at org.hibernate.persister.entity.mutation.AbstractDeleteCoordinator.doStaticDelete(AbstractDeleteCoordinator.java:275)
+	at org.hibernate.persister.entity.mutation.AbstractDeleteCoordinator.delete(AbstractDeleteCoordinator.java:84)
+	at org.hibernate.action.internal.EntityDeleteAction.execute(EntityDeleteAction.java:136)
+	at org.hibernate.engine.spi.ActionQueue.executeActions(ActionQueue.java:646)
+	at org.hibernate.engine.spi.ActionQueue.executeActions(ActionQueue.java:513)
+	at org.hibernate.event.internal.AbstractFlushingEventListener.performExecutions(AbstractFlushingEventListener.java:378)
+	at org.hibernate.event.internal.DefaultFlushEventListener.onFlush(DefaultFlushEventListener.java:39)
+	at org.hibernate.event.service.internal.EventListenerGroupImpl.fireEventOnEachListener(EventListenerGroupImpl.java:140)
+	at org.hibernate.internal.SessionImpl.doFlush(SessionImpl.java:1447)
+	at org.hibernate.internal.SessionImpl.managedFlush(SessionImpl.java:488)
+	at org.hibernate.internal.SessionImpl.flushBeforeTransactionCompletion(SessionImpl.java:2325)
+	at org.hibernate.internal.SessionImpl.beforeTransactionCompletion(SessionImpl.java:2033)
+	at org.hibernate.engine.jdbc.internal.JdbcCoordinatorImpl.beforeTransactionCompletion(JdbcCoordinatorImpl.java:394)
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl.beforeCompletionCallback(JdbcResourceLocalTransactionCoordinatorImpl.java:167)
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commitNoRollbackOnly(JdbcResourceLocalTransactionCoordinatorImpl.java:249)
+	at org.hibernate.resource.transaction.backend.jdbc.internal.JdbcResourceLocalTransactionCoordinatorImpl$TransactionDriverControlImpl.commit(JdbcResourceLocalTransactionCoordinatorImpl.java:243)
+	at org.hibernate.engine.transaction.internal.TransactionImpl.commit(TransactionImpl.java:90)
+	at org.springframework.orm.jpa.JpaTransactionManager.doCommit(JpaTransactionManager.java:553)
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.processCommit(AbstractPlatformTransactionManager.java:794)
+	at org.springframework.transaction.support.AbstractPlatformTransactionManager.commit(AbstractPlatformTransactionManager.java:757)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.commitTransactionAfterReturning(TransactionAspectSupport.java:684)
+	at org.springframework.transaction.interceptor.TransactionAspectSupport.invokeWithinTransaction(TransactionAspectSupport.java:406)
+	at org.springframework.transaction.interceptor.TransactionInterceptor.invoke(TransactionInterceptor.java:118)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	at org.springframework.dao.support.PersistenceExceptionTranslationInterceptor.invoke(PersistenceExceptionTranslationInterceptor.java:135)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	at org.springframework.data.jpa.repository.support.CrudMethodMetadataPostProcessor$CrudMethodMetadataPopulatingMethodInterceptor.invoke(CrudMethodMetadataPostProcessor.java:166)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	at org.springframework.aop.framework.JdkDynamicAopProxy.invoke(JdkDynamicAopProxy.java:222)
+	at jdk.proxy2/jdk.proxy2.$Proxy145.deleteById(Unknown Source)
+	at com.aseguradora.api.controller.SeguroController.borrarSeguro(SeguroController.java:56)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:258)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:190)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1003)
+	at org.springframework.web.servlet.FrameworkServlet.doDelete(FrameworkServlet.java:925)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:651)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:108)
+	at org.springframework.security.web.FilterChainProxy.lambda$doFilterInternal$3(FilterChainProxy.java:235)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:371)
+	at org.springframework.security.web.access.intercept.AuthorizationFilter.doFilter(AuthorizationFilter.java:101)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:126)
+	at org.springframework.security.web.access.ExceptionTranslationFilter.doFilter(ExceptionTranslationFilter.java:120)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.authentication.AnonymousAuthenticationFilter.doFilter(AnonymousAuthenticationFilter.java:100)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter.doFilter(SecurityContextHolderAwareRequestFilter.java:181)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.savedrequest.RequestCacheAwareFilter.doFilter(RequestCacheAwareFilter.java:63)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:110)
+	at org.springframework.security.web.authentication.logout.LogoutFilter.doFilter(LogoutFilter.java:96)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.web.filter.CorsFilter.doFilterInternal(CorsFilter.java:91)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.header.HeaderWriterFilter.doHeadersAfter(HeaderWriterFilter.java:90)
+	at org.springframework.security.web.header.HeaderWriterFilter.doFilterInternal(HeaderWriterFilter.java:75)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:82)
+	at org.springframework.security.web.context.SecurityContextHolderFilter.doFilter(SecurityContextHolderFilter.java:69)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter.doFilterInternal(WebAsyncManagerIntegrationFilter.java:62)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.session.DisableEncodeUrlFilter.doFilterInternal(DisableEncodeUrlFilter.java:42)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.springframework.security.web.FilterChainProxy$VirtualFilterChain.doFilter(FilterChainProxy.java:380)
+	at org.springframework.security.web.FilterChainProxy.doFilterInternal(FilterChainProxy.java:237)
+	at org.springframework.security.web.FilterChainProxy.doFilter(FilterChainProxy.java:195)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.ServletRequestPathFilter.doFilter(ServletRequestPathFilter.java:52)
+	at org.springframework.web.filter.CompositeFilter$VirtualFilterChain.doFilter(CompositeFilter.java:113)
+	at org.springframework.web.filter.CompositeFilter.doFilter(CompositeFilter.java:74)
+	at org.springframework.security.config.annotation.web.configuration.WebSecurityConfiguration$CompositeFilterChainProxy.doFilter(WebSecurityConfiguration.java:317)
+	at org.springframework.web.filter.DelegatingFilterProxy.invokeDelegate(DelegatingFilterProxy.java:355)
+	at org.springframework.web.filter.DelegatingFilterProxy.doFilter(DelegatingFilterProxy.java:272)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:482)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:903)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1778)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+2026-01-29 09:43:14 [http-nio-8081-exec-8] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 10:03:23 [http-nio-8081-exec-3] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 10:52:47 [http-nio-8081-exec-2] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 10:55:47 [http-nio-8081-exec-4] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 10:56:23 [http-nio-8081-exec-8] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:00:56 [http-nio-8081-exec-3] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:01:37 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-01-29 11:01:37 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-01-29 11:01:37 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-29 11:01:37 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-01-29 11:01:37 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-01-29 11:01:45 [main] INFO  c.a.api.ApiAseguradoraApplication - Starting ApiAseguradoraApplication using Java 25.0.1 with PID 10248 (C:\Users\Luis Enrique\Desktop\Proyecto-Final\api\target\classes started by Luis Enrique in C:\Users\Luis Enrique\Desktop\Proyecto-Final\api)
+2026-01-29 11:01:45 [main] DEBUG c.a.api.ApiAseguradoraApplication - Running with Spring Boot v4.0.0, Spring v7.0.1
+2026-01-29 11:01:45 [main] INFO  c.a.api.ApiAseguradoraApplication - No active profile set, falling back to 1 default profile: "default"
+2026-01-29 11:01:47 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-01-29 11:01:47 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 81 ms. Found 6 JPA repository interfaces.
+2026-01-29 11:01:48 [main] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-01-29 11:01:48 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-01-29 11:01:48 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.14]
+2026-01-29 11:01:48 [main] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 2829 ms
+2026-01-29 11:01:48 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-01-29 11:01:49 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 7.1.8.Final
+2026-01-29 11:01:49 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-01-29 11:01:49 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-01-29 11:01:50 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@27dc81be
+2026-01-29 11:01:50 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-01-29 11:01:50 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-01-29 11:01:50 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:3307/aseguradora_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.0.44
+	Default catalog/schema: aseguradora_db/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DatasourceConnectionProviderImpl
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-01-29 11:01:51 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-01-29 11:01:51 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-01-29 11:01:51 [main] INFO  o.s.d.j.r.q.QueryEnhancerFactories - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-01-29 11:01:52 [main] WARN  o.s.b.j.a.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-01-29 11:01:52 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-01-29 11:01:53 [main] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path '/'
+2026-01-29 11:01:53 [main] INFO  c.a.api.ApiAseguradoraApplication - Started ApiAseguradoraApplication in 8.041 seconds (process running for 8.557)
+2026-01-29 11:02:02 [http-nio-8081-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-01-29 11:02:02 [http-nio-8081-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-01-29 11:02:02 [http-nio-8081-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-01-29 11:02:02 [http-nio-8081-exec-2] INFO  c.a.api.controller.AuthController - Login parcial: Usuario lenriqueinfantegonzalez@gmail.com requiere 2FA
+2026-01-29 11:02:19 [http-nio-8081-exec-4] INFO  c.a.api.controller.AuthController - 2FA ACTIVADO correctamente para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:02:26 [http-nio-8081-exec-6] INFO  c.a.api.controller.AuthController - Login parcial: Usuario lenriqueinfantegonzalez@gmail.com requiere 2FA
+2026-01-29 11:02:31 [http-nio-8081-exec-8] INFO  c.a.api.controller.AuthController - 2FA ACTIVADO correctamente para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:27 [http-nio-8081-exec-1] INFO  c.a.api.controller.AuthController - Login parcial: Usuario lenriqueinfantegonzalez@gmail.com requiere 2FA
+2026-01-29 11:05:42 [http-nio-8081-exec-3] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:44 [http-nio-8081-exec-4] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:45 [http-nio-8081-exec-5] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:45 [http-nio-8081-exec-6] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:45 [http-nio-8081-exec-7] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:46 [http-nio-8081-exec-8] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:47 [http-nio-8081-exec-9] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:47 [http-nio-8081-exec-10] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:47 [http-nio-8081-exec-1] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:47 [http-nio-8081-exec-2] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:48 [http-nio-8081-exec-4] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:48 [http-nio-8081-exec-5] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:51 [http-nio-8081-exec-6] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:51 [http-nio-8081-exec-7] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:05:51 [http-nio-8081-exec-8] INFO  c.a.api.controller.AuthController - Login exitoso (Con 2FA) para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:12:21 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-01-29 11:12:21 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-01-29 11:12:21 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-29 11:12:21 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-01-29 11:12:21 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-01-29 11:12:31 [main] INFO  c.a.api.ApiAseguradoraApplication - Starting ApiAseguradoraApplication using Java 25.0.1 with PID 14428 (C:\Users\Luis Enrique\Desktop\Proyecto-Final\api\target\classes started by Luis Enrique in C:\Users\Luis Enrique\Desktop\Proyecto-Final\api)
+2026-01-29 11:12:31 [main] DEBUG c.a.api.ApiAseguradoraApplication - Running with Spring Boot v4.0.0, Spring v7.0.1
+2026-01-29 11:12:31 [main] INFO  c.a.api.ApiAseguradoraApplication - No active profile set, falling back to 1 default profile: "default"
+2026-01-29 11:12:33 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-01-29 11:12:33 [main] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 82 ms. Found 6 JPA repository interfaces.
+2026-01-29 11:12:34 [main] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8081 (http)
+2026-01-29 11:12:34 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-01-29 11:12:34 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.14]
+2026-01-29 11:12:34 [main] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 2950 ms
+2026-01-29 11:12:34 [main] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-01-29 11:12:35 [main] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 7.1.8.Final
+2026-01-29 11:12:35 [main] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-01-29 11:12:35 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-01-29 11:12:36 [main] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@3595086b
+2026-01-29 11:12:36 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-01-29 11:12:36 [main] WARN  org.hibernate.orm.deprecation - HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-01-29 11:12:36 [main] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:3307/aseguradora_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true&useUnicode=true&characterEncoding=UTF-8]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.0.44
+	Default catalog/schema: aseguradora_db/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DatasourceConnectionProviderImpl
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-01-29 11:12:37 [main] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-01-29 11:12:37 [main] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-01-29 11:12:37 [main] INFO  o.s.d.j.r.q.QueryEnhancerFactories - Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-01-29 11:12:38 [main] WARN  o.s.b.j.a.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-01-29 11:12:38 [main] INFO  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with UserDetailsService bean with name userDetailsService
+2026-01-29 11:12:39 [main] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8081 (http) with context path '/'
+2026-01-29 11:12:39 [main] INFO  c.a.api.ApiAseguradoraApplication - Started ApiAseguradoraApplication in 8.212 seconds (process running for 8.737)
+2026-01-29 11:13:05 [http-nio-8081-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-01-29 11:13:05 [http-nio-8081-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-01-29 11:13:05 [http-nio-8081-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-01-29 11:13:06 [http-nio-8081-exec-2] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:13:21 [http-nio-8081-exec-3] INFO  c.a.api.controller.AuthController - 2FA desactivado para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:13:22 [http-nio-8081-exec-5] INFO  c.a.api.controller.AuthController - Iniciado proceso de activación 2FA para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:21:55 [http-nio-8081-exec-3] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:22:20 [http-nio-8081-exec-3] INFO  c.a.api.controller.AuthController - Iniciado proceso de activación 2FA para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:22:43 [http-nio-8081-exec-5] INFO  c.a.api.controller.AuthController - 2FA activado correctamente para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:22:50 [http-nio-8081-exec-7] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:23:15 [http-nio-8081-exec-10] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:27:47 [http-nio-8081-exec-10] INFO  c.a.api.controller.AuthController - Login exitoso para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:27:51 [http-nio-8081-exec-3] INFO  c.a.api.controller.AuthController - 2FA desactivado para: lenriqueinfantegonzalez@gmail.com
+2026-01-29 11:28:16 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-01-29 11:28:16 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-01-29 11:28:16 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-01-29 11:28:16 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-01-29 11:28:16 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
