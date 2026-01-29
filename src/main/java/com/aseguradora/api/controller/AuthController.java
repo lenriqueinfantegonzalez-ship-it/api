@@ -1,252 +1,173 @@
 package com.aseguradora.api.controller;
 
-import com.aseguradora.api.dto.LoginRequest;
-import com.aseguradora.api.model.TokenSeguridad;
 import com.aseguradora.api.model.Usuario;
-import com.aseguradora.api.repository.TokenSeguridadRepository;
 import com.aseguradora.api.repository.UsuarioRepository;
-import com.aseguradora.api.service.EmailService;
+import com.aseguradora.api.security.JwtUtil;
 import com.warrenstrange.googleauth.GoogleAuthenticator;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
-import com.warrenstrange.googleauth.GoogleAuthenticatorQRGenerator;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory; // <--- LOGS PROFESIONALES
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid; // <--- VALIDACIÓN DE DATOS
 
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    // Inicializamos el sistema de Logs
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
+
     @Autowired
     private UsuarioRepository usuarioRepository;
-    @Autowired
-    private TokenSeguridadRepository tokenRepository;
-    @Autowired
-    private PasswordEncoder encoder;
-    @Autowired
-    private SecurityContextRepository securityContextRepository;
-    @Autowired
-    private EmailService emailService;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
+    // Instancia para 2FA
     private final GoogleAuthenticator gAuth = new GoogleAuthenticator();
 
-    // --- 1. LOGIN ---
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest, HttpServletRequest request, HttpServletResponse response) {
+    // --- REGISTRO (Ahora con @Valid para rechazar emails falsos) ---
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@Valid @RequestBody Usuario nuevoUsuario) {
         try {
-            Usuario usuario = usuarioRepository.findByCorreo(loginRequest.getCorreo())
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            if (usuarioRepository.findByCorreo(nuevoUsuario.getCorreo()).isPresent()) {
+                logger.warn("Intento de registro fallido: El correo {} ya existe", nuevoUsuario.getCorreo());
+                return ResponseEntity.status(400).body("El correo ya está registrado.");
+            }
+
+            // Encriptamos contraseña
+            nuevoUsuario.setPassword(passwordEncoder.encode(nuevoUsuario.getPassword()));
             
-            // --- NUEVO REQUISITO: VERIFICAR SI ESTÁ ACTIVO ---
-            if (Boolean.FALSE.equals(usuario.getActivo())) {
-                return ResponseEntity.status(403).body("Debes confirmar tu correo electrónico antes de entrar.");
-            }
+            // Configuramos rol y estado por defecto
+            if (nuevoUsuario.getRol() == null) nuevoUsuario.setRol("USER");
+            nuevoUsuario.setActivo(true);
+            nuevoUsuario.setFechaRegistro(java.time.LocalDateTime.now());
+            
+            // 2FA Desactivado al inicio
+            nuevoUsuario.setTwoFactorEnabled(false); 
+            nuevoUsuario.setTwoFactorSecret(null);
 
-            // Validar contraseña
-            authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(loginRequest.getCorreo(), loginRequest.getPassword())
-            );
-
-            // Reseteamos intentos 2FA si entra bien
-            usuario.setIntentos2fa(0); 
-            usuarioRepository.save(usuario);
-
-            // Comprobar 2FA
-            if (Boolean.TRUE.equals(usuario.getTwoFactorEnabled())) {
-                Map<String, Object> resp = new HashMap<>();
-                resp.put("status", "2FA_REQUIRED");
-                resp.put("mensaje", "Introduce el código de tu aplicación Authenticator.");
-                resp.put("correo", usuario.getCorreo());
-                return ResponseEntity.ok(resp);
-            }
-
-            return realizarLoginStandard(usuario, request, response);
+            usuarioRepository.save(nuevoUsuario);
+            
+            logger.info("Nuevo usuario registrado con éxito: {}", nuevoUsuario.getCorreo());
+            return ResponseEntity.ok("Usuario registrado con éxito");
 
         } catch (Exception e) {
-            return ResponseEntity.status(401).body("Credenciales incorrectas o cuenta no activa");
+            logger.error("Error crítico en el registro: {}", e.getMessage());
+            return ResponseEntity.status(500).body("Error en el servidor al registrar.");
         }
     }
 
-    // --- 2. VERIFICAR CÓDIGO 2FA ---
-    @PostMapping("/verify-2fa")
-    public ResponseEntity<?> verify2fa(@RequestBody Map<String, String> payload, HttpServletRequest request, HttpServletResponse response) {
-        String correo = payload.get("correo");
-        int codigo;
-        try { codigo = Integer.parseInt(payload.get("codigo")); } catch (Exception e) { return ResponseEntity.badRequest().body("Código inválido"); }
+    // --- LOGIN ---
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody Map<String, String> credenciales) {
+        String correo = credenciales.get("correo");
+        String password = credenciales.get("password");
 
-        Usuario usuario = usuarioRepository.findByCorreo(correo).orElseThrow();
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByCorreo(correo);
 
-        if (usuario.getIntentos2fa() != null && usuario.getIntentos2fa() >= 3) {
-            return ResponseEntity.status(403).body("Cuenta bloqueada temporalmente.");
+        if (usuarioOpt.isPresent()) {
+            Usuario usuario = usuarioOpt.get();
+            
+            // 1. Verificamos contraseña
+            if (passwordEncoder.matches(password, usuario.getPassword())) {
+                
+                // 2. Verificamos si está ACTIVO
+                if (!usuario.getActivo()) {
+                    logger.warn("Login rechazado: Usuario inactivo ({})", correo);
+                    return ResponseEntity.status(403).body("Tu cuenta está desactivada. Contacta con el admin.");
+                }
+
+                // 3. Generamos Token JWT
+                String token = jwtUtil.generateToken(usuario.getCorreo(), usuario.getRol(), usuario.getIdUsuario());
+                
+                // Preparamos respuesta
+                Map<String, Object> respuesta = new HashMap<>();
+                respuesta.put("token", token);
+                respuesta.put("usuario", usuario);
+                
+                logger.info("Login exitoso para: {}", correo);
+                return ResponseEntity.ok(respuesta);
+            }
         }
-
-        if (gAuth.authorize(usuario.getTwoFactorSecret(), codigo)) {
-            usuario.setIntentos2fa(0);
-            usuarioRepository.save(usuario);
-            return realizarLoginStandard(usuario, request, response);
-        } else {
-            int intentos = (usuario.getIntentos2fa() == null ? 0 : usuario.getIntentos2fa()) + 1;
-            usuario.setIntentos2fa(intentos);
-            usuarioRepository.save(usuario);
-            if (intentos >= 3) return ResponseEntity.status(403).body("Has superado los 3 intentos.");
-            return ResponseEntity.badRequest().body("Código incorrecto.");
-        }
-    }
-
-    // --- 3. SETUP y CONFIRM 2FA (Sin cambios) ---
-    @PostMapping("/setup-2fa")
-    public ResponseEntity<?> setup2fa(@RequestBody Map<String, String> payload) {
-        Usuario u = usuarioRepository.findByCorreo(payload.get("correo")).orElseThrow();
-        GoogleAuthenticatorKey key = gAuth.createCredentials();
-        u.setTwoFactorSecret(key.getKey());
-        u.setTwoFactorEnabled(false);
-        usuarioRepository.save(u);
-        return ResponseEntity.ok(Map.of("secret", key.getKey(), "qrUrl", GoogleAuthenticatorQRGenerator.getOtpAuthTotpURL("AseguradoraApp", u.getCorreo(), key)));
-    }
-
-    @PostMapping("/confirm-2fa")
-    public ResponseEntity<?> confirm2fa(@RequestBody Map<String, String> payload) {
-        Usuario u = usuarioRepository.findByCorreo(payload.get("correo")).orElseThrow();
-        if (gAuth.authorize(u.getTwoFactorSecret(), Integer.parseInt(payload.get("codigo")))) {
-            u.setTwoFactorEnabled(true);
-            usuarioRepository.save(u);
-            return ResponseEntity.ok("2FA Activado");
-        }
-        return ResponseEntity.badRequest().body("Código erróneo");
-    }
-
-    @PostMapping("/disable-2fa")
-    public ResponseEntity<?> disable2fa(@RequestBody Map<String, String> payload) {
-        Usuario u = usuarioRepository.findByCorreo(payload.get("correo")).orElseThrow();
-        u.setTwoFactorEnabled(false);
-        u.setTwoFactorSecret(null);
-        usuarioRepository.save(u);
-        return ResponseEntity.ok("2FA Desactivado");
-    }
-
-    // --- 4. RECUPERACIÓN PASSWORD (Sin cambios) ---
-    @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> payload) {
-        Usuario u = usuarioRepository.findByCorreo(payload.get("correo")).orElse(null);
-        if (u != null) {
-            String tokenStr = UUID.randomUUID().toString();
-            TokenSeguridad t = new TokenSeguridad();
-            t.setToken(tokenStr);
-            t.setUsuario(u);
-            t.setTipo("RECUPERACION");
-            t.setFechaExpiracion(LocalDateTime.now().plusMinutes(30));
-            tokenRepository.save(t);
-
-            String url = "http://127.0.0.1:5500/restablecer.html?token=" + tokenStr;
-            emailService.enviarCorreo(u.getCorreo(), "Restablecer Contraseña", "Haz clic aquí: " + url);
-        }
-        return ResponseEntity.ok("Correo enviado si existe.");
-    }
-
-    @PostMapping("/reset-password-token")
-    public ResponseEntity<?> resetPasswordToken(@RequestBody Map<String, String> payload) {
-        TokenSeguridad t = tokenRepository.findByToken(payload.get("token")).orElseThrow(() -> new RuntimeException("Token inválido"));
-        if (t.getFechaExpiracion().isBefore(LocalDateTime.now())) return ResponseEntity.status(400).body("Token expirado");
         
-        Usuario u = t.getUsuario();
-        u.setPassword(encoder.encode(payload.get("nuevaPassword")));
-        usuarioRepository.save(u);
-        tokenRepository.delete(t);
-        return ResponseEntity.ok("Contraseña cambiada");
+        logger.warn("Login fallido: Credenciales incorrectas para {}", correo);
+        return ResponseEntity.status(401).body("Credenciales incorrectas");
     }
 
-    // --- 5. REGISTRO CON CONFIRMACIÓN (MODIFICADO) ---
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Usuario nuevoUsuario) {
-        if (usuarioRepository.findByCorreo(nuevoUsuario.getCorreo()).isPresent()) {
-            return ResponseEntity.badRequest().body("Error: El correo ya está registrado.");
-        }
-        Usuario user = new Usuario();
-        user.setNombreCompleto(nuevoUsuario.getNombreCompleto());
-        user.setCorreo(nuevoUsuario.getCorreo());
-        user.setPassword(encoder.encode(nuevoUsuario.getPassword()));
-        user.setRol(nuevoUsuario.getRol());
-        user.setFechaRegistro(LocalDateTime.now());
-        user.setTwoFactorEnabled(false);
-        user.setIntentos2fa(0);
-        user.setMovil(nuevoUsuario.getMovil() != null ? nuevoUsuario.getMovil() : "");
-        user.setDireccion("");
+    // --- SETUP 2FA (Generar QR) ---
+    @PostMapping("/setup-2fa")
+    public ResponseEntity<?> setup2fa(@RequestBody Map<String, String> body) {
+        String correo = body.get("correo");
+        Usuario usuario = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // CAMBIO IMPORTANTE: Nace INACTIVO
-        user.setActivo(false); 
-        Usuario usuarioGuardado = usuarioRepository.save(user);
+        // Generar clave secreta
+        final GoogleAuthenticatorKey key = gAuth.createCredentials();
+        String secret = key.getKey();
+        
+        // Guardar secreto temporalmente (o definitivo según lógica)
+        usuario.setTwoFactorSecret(secret);
+        usuarioRepository.save(usuario);
 
-        // Generar Token de Activación
-        String tokenStr = UUID.randomUUID().toString();
-        TokenSeguridad token = new TokenSeguridad();
-        token.setToken(tokenStr);
-        token.setUsuario(usuarioGuardado);
-        token.setTipo("ACTIVACION"); // Usamos un tipo diferente para distinguir
-        token.setFechaExpiracion(LocalDateTime.now().plusHours(24)); // 24 horas para activar
-        tokenRepository.save(token);
-
-        // Enviar Correo de Activación
-        String enlace = "http://127.0.0.1:5500/confirmar.html?token=" + tokenStr;
-        emailService.enviarCorreo(
-            user.getCorreo(),
-            "Activa tu cuenta - Aseguradora",
-            "Bienvenido " + user.getNombreCompleto() + ",\n\n" +
-            "Para activar tu cuenta, haz clic en el siguiente enlace:\n\n" +
-            enlace + "\n\n" +
-            "Si no te has registrado tú, ignora este correo."
-        );
-
-        return ResponseEntity.ok("Registro exitoso. Revisa tu correo para activar la cuenta.");
+        // Generar URL para código QR (formato compatible con Google Authenticator)
+        String qrUrl = String.format("otpauth://totp/AseguradoraApp:%s?secret=%s&issuer=AseguradoraApp", correo, secret);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("qrUrl", qrUrl);
+        response.put("secret", secret);
+        
+        logger.info("Iniciado proceso de activación 2FA para: {}", correo);
+        return ResponseEntity.ok(response);
     }
 
-    // --- 6. ENDPOINT PARA CONFIRMAR CUENTA (NUEVO) ---
-    @PostMapping("/confirm-account")
-    public ResponseEntity<?> confirmAccount(@RequestBody Map<String, String> payload) {
-        String tokenStr = payload.get("token");
-        TokenSeguridad tokenDB = tokenRepository.findByToken(tokenStr)
-                .orElseThrow(() -> new RuntimeException("Token inválido"));
+    // --- CONFIRMAR 2FA ---
+    @PostMapping("/confirm-2fa")
+    public ResponseEntity<?> confirm2fa(@RequestBody Map<String, String> body) {
+        String correo = body.get("correo");
+        String codigoStr = body.get("codigo"); // El código que introduce el usuario
+        int codigo = Integer.parseInt(codigoStr);
 
-        if (!"ACTIVACION".equals(tokenDB.getTipo())) {
-            return ResponseEntity.badRequest().body("Este token no es de activación.");
+        Usuario usuario = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Verificar si el código coincide con el secreto guardado
+        boolean isCodeValid = gAuth.authorize(usuario.getTwoFactorSecret(), codigo);
+
+        if (isCodeValid) {
+            usuario.setTwoFactorEnabled(true);
+            usuarioRepository.save(usuario);
+            logger.info("2FA activado correctamente para: {}", correo);
+            return ResponseEntity.ok("2FA Activado correctamente");
+        } else {
+            logger.warn("Fallo al confirmar 2FA para {}: Código incorrecto", correo);
+            return ResponseEntity.status(400).body("Código incorrecto");
         }
-
-        Usuario usuario = tokenDB.getUsuario();
-        usuario.setActivo(true); // ¡ACTIVAMOS AL USUARIO!
+    }
+    
+    // --- DESACTIVAR 2FA ---
+    @PostMapping("/disable-2fa")
+    public ResponseEntity<?> disable2fa(@RequestBody Map<String, String> body) {
+        String correo = body.get("correo");
+        Usuario usuario = usuarioRepository.findByCorreo(correo)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+        
+        usuario.setTwoFactorEnabled(false);
+        usuario.setTwoFactorSecret(null);
         usuarioRepository.save(usuario);
         
-        tokenRepository.delete(tokenDB); // Borramos el token usado
-
-        return ResponseEntity.ok("Cuenta activada correctamente.");
-    }
-
-    // Auxiliar Login
-    private ResponseEntity<?> realizarLoginStandard(Usuario usuario, HttpServletRequest request, HttpServletResponse response) {
-        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                usuario.getCorreo(), null, org.springframework.security.core.authority.AuthorityUtils.createAuthorityList("ROLE_" + usuario.getRol()));
-        SecurityContext sc = SecurityContextHolder.createEmptyContext();
-        sc.setAuthentication(auth);
-        SecurityContextHolder.setContext(sc);
-        securityContextRepository.saveContext(sc, request, response);
-        
-        Map<String, Object> resp = new HashMap<>();
-        resp.put("status", "OK");
-        resp.put("usuario", usuario);
-        return ResponseEntity.ok(resp);
+        logger.info("2FA desactivado para: {}", correo);
+        return ResponseEntity.ok("2FA Desactivado");
     }
 }

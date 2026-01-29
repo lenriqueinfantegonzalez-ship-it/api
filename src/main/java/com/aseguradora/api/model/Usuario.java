@@ -1,12 +1,13 @@
 package com.aseguradora.api.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*; // <--- NUEVO IMPORT VITAL
 import lombok.Data;
 import java.time.LocalDateTime;
 
-@Data // Lombok: Crea automáticamente getters, setters y toString
-@Entity // Esto le dice a Java: "Esta clase representa una tabla en la BD"
-@Table(name = "usuarios") // Nombre exacto de la tabla en SQL
+@Data
+@Entity
+@Table(name = "usuarios")
 public class Usuario {
 
     @Id
@@ -14,9 +15,12 @@ public class Usuario {
     @Column(name = "id_usuario")
     private Long idUsuario;
 
+    @NotBlank(message = "El nombre no puede estar vacío") // <--- VALIDACIÓN
     @Column(name = "nombre_completo", nullable = false, length = 50)
     private String nombreCompleto;
 
+    @NotBlank(message = "El correo es obligatorio")
+    @Email(message = "El formato del correo no es válido") // <--- VALIDA QUE TENGA @ Y PUNTO
     @Column(nullable = false, unique = true, length = 100)
     private String correo;
 
@@ -29,27 +33,20 @@ public class Usuario {
     private String direccion;
 
     @Column(length = 20)
-    private String rol; // 'ADMIN' o 'USER'
+    private String rol;
 
     private Boolean activo;
 
     @Column(name = "fecha_registro")
     private LocalDateTime fechaRegistro;
-   // ... otros campos ...
 
-    // --- CAMPOS NUEVOS PARA GOOGLE AUTHENTICATOR ---
-    
+    // --- 2FA ---
     @Column(name = "two_factor_secret")
-    private String twoFactorSecret; // Aquí guardamos la clave Base32
+    private String twoFactorSecret;
     
-    // Requisito: Límite de intentos
     @Column(name = "intentos_2fa")
-    private Integer intentos2fa = 0; 
-    
-    // NOTA: Borra twoFactorCode y twoFactorExpiry, ya no sirven.
+    private Integer intentos2fa = 0;
 
-    // Opcional: Para saber si este usuario tiene obligado el 2FA o no.
-    // Lo pondremos a 'true' por defecto o según prefieras.
     @Column(name = "two_factor_enabled") 
     private Boolean twoFactorEnabled = true; 
 }

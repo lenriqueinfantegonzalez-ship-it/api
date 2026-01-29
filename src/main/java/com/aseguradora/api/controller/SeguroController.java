@@ -4,6 +4,9 @@ import com.aseguradora.api.model.Factura;
 import com.aseguradora.api.model.Seguro;
 import com.aseguradora.api.repository.FacturaRepository;
 import com.aseguradora.api.repository.SeguroRepository;
+
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
@@ -30,7 +33,7 @@ public class SeguroController {
 
     // CREAR SEGURO + FACTURA AUTOMÁTICA
     @PostMapping
-    public Seguro crearSeguro(@RequestBody Seguro seguro) {
+    public Seguro crearSeguro(@Valid @RequestBody Seguro seguro) {
         // 1. Guardamos el seguro primero
         Seguro nuevoSeguro = seguroRepository.save(seguro);
 

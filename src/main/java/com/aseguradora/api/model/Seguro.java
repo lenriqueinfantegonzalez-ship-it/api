@@ -1,7 +1,8 @@
 package com.aseguradora.api.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties; // <--- AÑADIR IMPORT
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.*; // <--- IMPORT NUEVO
 import lombok.Data;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,15 +17,20 @@ public class Seguro {
     @Column(name = "id_seguro")
     private Long idSeguro;
 
+    @NotBlank(message = "El número de póliza es obligatorio")
     @Column(name = "num_poliza", nullable = false, unique = true, length = 20)
     private String numPoliza;
 
+    @NotNull(message = "La fecha de inicio es obligatoria")
     @Column(name = "fecha_inicio", nullable = false)
     private LocalDate fechaInicio;
 
+    @NotNull(message = "La fecha de renovación es obligatoria")
     @Column(name = "fecha_renovacion", nullable = false)
     private LocalDate fechaRenovacion;
 
+    @NotNull(message = "El precio es obligatorio")
+    @Positive(message = "El precio debe ser mayor que 0") // <--- ¡AQUÍ ESTÁ LA MAGIA! Evita negativos
     @Column(name = "prima_anual", nullable = false)
     private BigDecimal primaAnual;
 
@@ -34,11 +40,8 @@ public class Seguro {
     @Column(length = 20)
     private String estado;
 
-    // --- RELACIONES CORREGIDAS ---
-
     @ManyToOne
     @JoinColumn(name = "id_usuario", nullable = false)
-    // ESTA LÍNEA ES VITAL: Evita que al pedir seguros se rompa intentando leer el usuario entero
     @JsonIgnoreProperties({"password", "roles", "hibernateLazyInitializer", "handler"}) 
     private Usuario usuario;
 

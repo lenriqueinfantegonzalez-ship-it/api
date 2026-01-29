@@ -5,6 +5,9 @@ import com.aseguradora.api.model.Usuario;
 import com.aseguradora.api.repository.TokenSeguridadRepository;
 import com.aseguradora.api.repository.UsuarioRepository;
 import com.aseguradora.api.service.EmailService;
+
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,7 +45,7 @@ public class UsuarioController {
 
     // --- EDICIÓN CON ENVÍO DE EMAIL (CORREGIDO PARA USAR STRING) ---
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> updateUsuario(@PathVariable Long id, @RequestBody Usuario usuarioDetalles) {
+    public ResponseEntity<Usuario> updateUsuario(@PathVariable Long id, @Valid @RequestBody Usuario usuarioDetalles) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
 
