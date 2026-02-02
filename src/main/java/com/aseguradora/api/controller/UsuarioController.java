@@ -1,101 +1,109 @@
 package com.aseguradora.api.controller;
 
-import com.aseguradora.api.model.TokenSeguridad;
 import com.aseguradora.api.model.Usuario;
-import com.aseguradora.api.repository.TokenSeguridadRepository;
 import com.aseguradora.api.repository.UsuarioRepository;
 import com.aseguradora.api.service.EmailService;
-
-import jakarta.validation.Valid;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
+import java.util.Optional;
+import java.util.UUID; // <--- NECESARIO PARA GENERAR EL TOKEN
 
 @RestController
 @RequestMapping("/api/usuarios")
+@CrossOrigin(origins = "*") 
 public class UsuarioController {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
-    
+
     @Autowired
-    private TokenSeguridadRepository tokenRepository;
-    
+    private PasswordEncoder passwordEncoder;
+
     @Autowired
     private EmailService emailService;
 
-    // Listar todos
+    // LISTAR TODOS
     @GetMapping
     public List<Usuario> getAllUsuarios() {
         return usuarioRepository.findAll();
     }
 
-    // Obtener uno por ID
+    // OBTENER UNO
     @GetMapping("/{id}")
-    public ResponseEntity<Usuario> getUsuarioById(@PathVariable Long id) {
+    public ResponseEntity<Usuario> getUsuario(@PathVariable Long id) {
         return usuarioRepository.findById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // --- EDICIÓN CON ENVÍO DE EMAIL (CORREGIDO PARA USAR STRING) ---
+    // EDITAR USUARIO (CON TOKEN DE REACTIVACIÓN)
     @PutMapping("/{id}")
-    public ResponseEntity<Usuario> updateUsuario(@PathVariable Long id, @Valid @RequestBody Usuario usuarioDetalles) {
-        Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
-
-        // 1. Guardamos el estado ANTERIOR
-        boolean estabaActivo = usuario.getActivo();
-
-        // 2. Actualizamos los datos
-        usuario.setNombreCompleto(usuarioDetalles.getNombreCompleto());
-        usuario.setRol(usuarioDetalles.getRol());
-        usuario.setActivo(usuarioDetalles.getActivo());
-        
-        // 3. Detectamos si ha pasado de ACTIVO -> INACTIVO
-        if (estabaActivo && !usuario.getActivo()) {
+    public ResponseEntity<?> updateUsuario(@PathVariable Long id, @RequestBody Usuario usuarioDetalles) {
+        return usuarioRepository.findById(id).map(usuario -> {
             
-            try {
-                String token = UUID.randomUUID().toString();
-                
-                TokenSeguridad tokenSeguridad = new TokenSeguridad();
-                tokenSeguridad.setToken(token);
-                tokenSeguridad.setUsuario(usuario);
-                tokenSeguridad.setFechaExpiracion(LocalDateTime.now().plusHours(48)); 
-                
-                // --- CORRECCIÓN: Usamos String "ACTIVACION" ---
-                // Tu modelo TokenSeguridad espera un String, no un Enum.
-                tokenSeguridad.setTipo("ACTIVACION");
-                
-                tokenRepository.save(tokenSeguridad);
-                
-                // Intentamos enviar el correo
-                emailService.enviarCorreoReactivacion(usuario.getCorreo(), token);
-                System.out.println(">> Correo de reactivación enviado correctamente a: " + usuario.getCorreo());
-                
-            } catch (Exception e) {
-                // Si falla, mostramos el error pero no rompemos la app
-                System.err.println("Error crítico guardando token o enviando email: " + e.getMessage());
-                e.printStackTrace(); 
-            }
-        }
+            Boolean estadoAnterior = usuario.getActivo();
 
-        final Usuario updatedUsuario = usuarioRepository.save(usuario);
-        return ResponseEntity.ok(updatedUsuario);
+            // Actualizar datos básicos
+            usuario.setNombreCompleto(usuarioDetalles.getNombreCompleto());
+            usuario.setRol(usuarioDetalles.getRol());
+            if(usuarioDetalles.getMovil() != null) usuario.setMovil(usuarioDetalles.getMovil());
+
+            // LOGICA DE ACTIVACIÓN / DESACTIVACIÓN
+            if (usuarioDetalles.getActivo() != null) {
+                usuario.setActivo(usuarioDetalles.getActivo());
+                
+                // SI ESTAMOS DESACTIVANDO -> GENERAMOS TOKEN DE REACTIVACIÓN
+                if (!usuario.getActivo()) {
+                    usuario.setConfirmationToken(UUID.randomUUID().toString());
+                }
+            }
+
+            // Guardamos
+            usuarioRepository.save(usuario);
+
+            // ENVIAR EMAIL SI HUBO CAMBIO DE ESTADO
+            if (estadoAnterior != null && !estadoAnterior.equals(usuario.getActivo())) {
+                
+                if (usuario.getActivo()) {
+                    // CASO: EL ADMIN LO REACTIVÓ MANUALMENTE
+                    emailService.enviarCorreo(usuario.getCorreo(), "Cuenta Reactivada", 
+                        "Hola " + usuario.getNombreCompleto() + ",\n\n" +
+                        "Un administrador ha reactivado tu cuenta manualmente.\n" +
+                        "Ya puedes entrar: http://127.0.0.1:5500/index.html");
+                } else {
+                    // CASO: SE HA DESACTIVADO -> ENVIAMOS EL LINK CON EL TOKEN
+                    String linkReactivar = "http://127.0.0.1:5500/reactivar.html?token=" + usuario.getConfirmationToken();
+                    
+                    String mensaje = "Hola " + usuario.getNombreCompleto() + ",\n\n" +
+                                     "Tu cuenta ha sido desactivada temporalmente.\n" +
+                                     "Si deseas reactivarla tú mismo y volver a acceder, haz clic en el siguiente enlace:\n\n" +
+                                     linkReactivar + "\n\n" +
+                                     "Atentamente,\nEquipo LEIGSeguros.";
+                    
+                    emailService.enviarCorreo(usuario.getCorreo(), "Acción Requerida: Reactivar Cuenta", mensaje);
+                }
+            }
+
+            return ResponseEntity.ok(usuario);
+        }).orElse(ResponseEntity.notFound().build());
     }
 
-    // Eliminar
+    // BORRAR USUARIO
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUsuario(@PathVariable Long id) {
-        if (!usuarioRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
+    public ResponseEntity<?> deleteUsuario(@PathVariable Long id) {
+        Optional<Usuario> userOpt = usuarioRepository.findById(id);
+        if (userOpt.isPresent()) {
+            try {
+                usuarioRepository.deleteById(id);
+                return ResponseEntity.ok().body("Usuario eliminado.");
+            } catch (Exception e) {
+                return ResponseEntity.status(409).body("No se puede eliminar: Tiene datos asociados.");
+            }
         }
-        usuarioRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.status(404).body("Usuario no encontrado.");
     }
 }
