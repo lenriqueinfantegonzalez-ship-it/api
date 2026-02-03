@@ -44,50 +44,54 @@ public class AuthController {
     // ==========================================
     // 1. REGISTRO (CON ENVÍO DE EMAIL REAL)
     // ==========================================
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody Usuario nuevoUsuario) {
-        logger.info(">>> Registro solicitado para: {}", nuevoUsuario.getCorreo());
-        
-        try {
-            if (usuarioRepository.findByCorreo(nuevoUsuario.getCorreo()).isPresent()) {
-                return ResponseEntity.status(400).body("El correo ya está registrado.");
-            }
+   // ... imports ...
 
-            // 1. Configuración del usuario
-            nuevoUsuario.setPassword(passwordEncoder.encode(nuevoUsuario.getPassword()));
-            nuevoUsuario.setFechaRegistro(LocalDateTime.now());
-            nuevoUsuario.setRol(nuevoUsuario.getRol() == null ? "USER" : nuevoUsuario.getRol());
-            nuevoUsuario.setTwoFactorEnabled(false);
-            
-            // 2. IMPORTANTE: Nace inactivo hasta confirmar
-            nuevoUsuario.setActivo(false); 
+@PostMapping("/register")
+public ResponseEntity<?> register(@RequestBody Map<String, String> body) {
+    try {
+        String correo = body.get("correo");
+        String nombre = body.get("nombreCompleto");
+        String movil = body.get("movil"); // <--- Recibimos el móvil
 
-            // 3. Generar Token
-            String token = UUID.randomUUID().toString();
-            nuevoUsuario.setConfirmationToken(token);
-
-            // 4. Guardar en BD
-            usuarioRepository.save(nuevoUsuario);
-
-            // 5. ENVIAR EMAIL REAL
-            String link = "http://127.0.0.1:5500/confirmar.html?token=" + token;
-            String mensaje = "Hola " + nuevoUsuario.getNombreCompleto() + ",\n\n" +
-                             "Gracias por registrarte en LEIGSeguros.\n" +
-                             "Para activar tu cuenta, haz clic en el siguiente enlace:\n\n" +
-                             link + "\n\n" +
-                             "Si no has solicitado este registro, ignora este mensaje.";
-
-            emailService.enviarCorreo(nuevoUsuario.getCorreo(), "Activa tu cuenta - LEIGSeguros", mensaje);
-            
-            logger.info("Email de activación enviado a: {}", nuevoUsuario.getCorreo());
-            return ResponseEntity.ok("Usuario registrado. Se ha enviado un correo de activación.");
-
-        } catch (Exception e) {
-            logger.error("Error en registro", e);
-            return ResponseEntity.status(500).body("Error al registrar: " + e.getMessage());
+        if (usuarioRepository.existsByCorreo(correo)) {
+            return ResponseEntity.status(400).body("El correo ya está registrado.");
         }
-    }
 
+        // --- VALIDACIONES BACKEND ---
+        if (nombre == null || nombre.length() > 50) {
+            return ResponseEntity.status(400).body("El nombre es demasiado largo (máx 50 caracteres).");
+        }
+        if (movil != null && movil.length() > 9) {
+            return ResponseEntity.status(400).body("El móvil no puede tener más de 9 dígitos.");
+        }
+        // ----------------------------
+
+        Usuario nuevoUsuario = new Usuario();
+        nuevoUsuario.setNombreCompleto(nombre);
+        nuevoUsuario.setCorreo(correo);
+        nuevoUsuario.setPassword(body.get("password"));
+        nuevoUsuario.setRol(body.get("rol"));
+        nuevoUsuario.setMovil(movil); // <--- Guardamos el móvil
+
+        // ... resto de la lógica (cifrar password, token, save, email) ...
+        // (Mantén el código original que cifra la contraseña y envía el email)
+        
+        nuevoUsuario.setPassword(passwordEncoder.encode(nuevoUsuario.getPassword()));
+        nuevoUsuario.setFechaRegistro(LocalDateTime.now());
+        nuevoUsuario.setActivo(false);
+        String token = UUID.randomUUID().toString();
+        nuevoUsuario.setConfirmationToken(token);
+        
+        usuarioRepository.save(nuevoUsuario);
+        
+        // ... (código de envío de email) ...
+        
+        return ResponseEntity.ok("Usuario registrado con éxito.");
+
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body("Error al registrar: " + e.getMessage());
+    }
+}
     // ==========================================
     // 2. CONFIRMAR CUENTA
     // ==========================================

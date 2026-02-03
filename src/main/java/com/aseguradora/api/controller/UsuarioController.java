@@ -40,19 +40,33 @@ public class UsuarioController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // EDITAR USUARIO (CON TOKEN DE REACTIVACIÓN)
+  // EDITAR USUARIO (CON TOKEN DE REACTIVACIÓN)
     @PutMapping("/{id}")
     public ResponseEntity<?> updateUsuario(@PathVariable Long id, @RequestBody Usuario usuarioDetalles) {
         return usuarioRepository.findById(id).map(usuario -> {
             
             Boolean estadoAnterior = usuario.getActivo();
 
-            // Actualizar datos básicos
-            usuario.setNombreCompleto(usuarioDetalles.getNombreCompleto());
-            usuario.setRol(usuarioDetalles.getRol());
-            if(usuarioDetalles.getMovil() != null) usuario.setMovil(usuarioDetalles.getMovil());
+            // --- 1. VALIDACIONES (Esto ya lo tenías bien) ---
+            if (usuarioDetalles.getNombreCompleto() != null && usuarioDetalles.getNombreCompleto().length() > 50) {
+                return ResponseEntity.status(400).body("Error: El nombre excede los 50 caracteres.");
+            }
+            if (usuarioDetalles.getMovil() != null && usuarioDetalles.getMovil().length() > 9) {
+                return ResponseEntity.status(400).body("Error: El móvil excede los 9 dígitos.");
+            }
 
-            // LOGICA DE ACTIVACIÓN / DESACTIVACIÓN
+            // --- 2. ACTUALIZAR LOS DATOS (¡ESTO ES LO QUE FALTABA!) ---
+            usuario.setRol(usuarioDetalles.getRol());
+
+            if (usuarioDetalles.getNombreCompleto() != null) {
+                usuario.setNombreCompleto(usuarioDetalles.getNombreCompleto()); // <--- AÑADIR ESTO
+            }
+
+            if (usuarioDetalles.getMovil() != null) {
+                usuario.setMovil(usuarioDetalles.getMovil()); // <--- AÑADIR ESTO
+            }
+
+            // --- 3. LOGICA DE ACTIVACIÓN / DESACTIVACIÓN ---
             if (usuarioDetalles.getActivo() != null) {
                 usuario.setActivo(usuarioDetalles.getActivo());
                 

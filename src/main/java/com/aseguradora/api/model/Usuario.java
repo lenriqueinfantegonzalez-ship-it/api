@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.List;
+import jakarta.validation.constraints.Size;
 
 @Entity
 @Table(name = "usuarios")
@@ -14,7 +15,8 @@ public class Usuario {
     @Column(name = "id_usuario")
     private Long idUsuario;
 
-    @Column(name = "nombre_completo", nullable = false)
+    @Column(name = "nombre_completo", nullable = false, length = 50) // <--- En BD también limitamos
+    @Size(max = 50, message = "El nombre no puede superar los 50 caracteres")
     private String nombreCompleto;
 
     @Column(nullable = false, unique = true)
@@ -26,9 +28,9 @@ public class Usuario {
     private String rol; 
     private Boolean activo;
 
-    // --- AQUÍ ESTABA EL OTRO ERROR ---
-    @Column(name = "movil")
-    private String movil; // Antes era "telefono", ahora es "movil"
+    @Column(name = "movil", length = 9) // <--- Limitamos en BD
+    @Size(max = 9, message = "El móvil no puede superar los 9 caracteres")
+    private String movil;
 
     @Column(name = "direccion")
     private String direccion;
